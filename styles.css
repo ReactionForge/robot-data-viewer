@@ -210,7 +210,6 @@ svg { display: block; }
 .card-grid.cols-2 { --cols: 2; --wrist-span: 1; --tac-span: 1; --eye-span: 1; }
 .card-grid.cols-3 { --cols: 3; --wrist-span: 1; --tac-span: 1; --eye-span: 1; }
 .card-grid.cols-4 { --cols: 4; --wrist-span: 2; --tac-span: 1; --eye-span: 2; }
-.card-grid.mode-auto { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 .card-grid.mode-compact { gap: 8px; }
 /* One-screen: ego keeps the full row, all remaining channels share one compact row. */
 .card-grid.mode-single {
@@ -232,7 +231,6 @@ svg { display: block; }
 .card.card-tactile { --span: var(--tac-span); }
 .card.card-ego-eye { --span: var(--eye-span); }
 .mode-auto .card-ego { grid-column: 1 / -1; }
-.mode-auto .card-ego-eye { grid-column: span 1; }
 
 .card-head {
   display: flex; align-items: center; gap: 8px; padding: 9px 11px;

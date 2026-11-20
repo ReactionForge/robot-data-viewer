@@ -480,6 +480,37 @@
     return out;
   }
 
+  // Effective grid columns. Adaptive derives the count from the real available
+  // width so the overview (and its split eyes) always keeps the full top row.
+  function applyGridColumns() {
+    var grid = el.cardGrid;
+    if (!grid) return;
+    if (state.layout === 'single') {
+      var list = buildRenderList();
+      var egoCount = list.filter(function (it) { return isEgo(it.channel); }).length;
+      var otherCount = list.length - egoCount;
+      var cols = Math.max(otherCount, egoCount > 1 ? egoCount : 1, 1);
+      grid.style.setProperty('--cols', cols);
+      grid.style.setProperty('--eye-span', Math.max(1, Math.floor(cols / 2)));
+      grid.style.setProperty('--wrist-span', 1);
+      grid.style.setProperty('--tac-span', 1);
+      return;
+    }
+    if (state.layout === 'auto' || state.gridCols === 'auto') {
+      var w = el.mainScroll ? el.mainScroll.clientWidth : (grid.clientWidth || 1200);
+      var cols = w >= 1260 ? 4 : w >= 660 ? 2 : 1;
+      grid.style.setProperty('--cols', cols);
+      grid.style.setProperty('--wrist-span', cols >= 4 ? 2 : 1);
+      grid.style.setProperty('--tac-span', 1);
+      grid.style.setProperty('--eye-span', cols >= 4 ? 2 : 1);
+      return;
+    }
+    grid.style.removeProperty('--cols');
+    grid.style.removeProperty('--wrist-span');
+    grid.style.removeProperty('--tac-span');
+    grid.style.removeProperty('--eye-span');
+  }
+
   function applyMeta(c, video, wrap, resBadge) {
     if (!video.videoWidth || !video.videoHeight) return;
     c.width = video.videoWidth;
@@ -517,16 +548,7 @@
     document.querySelector('.app').classList.toggle('single-screen', single);
     el.cardGrid.className = 'card-grid mode-' + state.layout +
       ' cols-' + (state.gridCols === 'auto' ? 'auto' : state.gridCols);
-    if (single) {
-      var egoCount = list.filter(function (it) { return isEgo(it.channel); }).length;
-      var otherCount = list.length - egoCount;
-      var cols = Math.max(otherCount, egoCount > 1 ? egoCount : 1, 1);
-      el.cardGrid.style.setProperty('--cols', cols);
-      el.cardGrid.style.setProperty('--eye-span', Math.max(1, Math.floor(cols / 2)));
-    } else {
-      el.cardGrid.style.removeProperty('--cols');
-      el.cardGrid.style.removeProperty('--eye-span');
-    }
+    applyGridColumns();
     el.cardGrid.innerHTML = '';
     state.videos = [];
     state.master = null;
@@ -882,6 +904,7 @@
   el.collapseBtn.addEventListener('click', function () {
     el.sidebar.classList.toggle('collapsed');
     el.collapseBtn.textContent = el.sidebar.classList.contains('collapsed') ? '⇥' : '⇤';
+    applyGridColumns();
   });
 
   // layout switch
@@ -900,9 +923,17 @@
     if (!b || b.disabled) return;
     setEgoSplit(b.getAttribute('data-ego') === 'split', true);
   });
-  window.addEventListener('resize', function () {
+  var lastMainWidth = 0;
+  function handleResize() {
+    var w = el.mainScroll ? el.mainScroll.clientWidth : 0;
+    if (w !== lastMainWidth) {
+      lastMainWidth = w;
+      applyGridColumns();
+    }
     if (state.lbOpen) applyLbZoom();
-  });
+  }
+  window.addEventListener('resize', handleResize);
+  if (window.ResizeObserver && el.mainScroll) new ResizeObserver(handleResize).observe(el.mainScroll);
 
   document.querySelectorAll('.chip[data-filter]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -937,6 +968,7 @@
     state.gridCols = el.layoutSelect.value;
     el.cardGrid.className = 'card-grid mode-' + state.layout +
       ' cols-' + (state.gridCols === 'auto' ? 'auto' : state.gridCols);
+    applyGridColumns();
   });
   el.applyCustomBtn.addEventListener('click', function () {
     var checks = el.channelChecks.querySelectorAll('input');
