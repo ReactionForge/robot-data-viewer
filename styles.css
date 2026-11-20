@@ -212,6 +212,14 @@ svg { display: block; }
 .card-grid.cols-4 { --cols: 4; --wrist-span: 2; --tac-span: 1; --eye-span: 2; }
 .card-grid.mode-auto { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 .card-grid.mode-compact { gap: 8px; }
+/* One-screen: ego keeps the full row, all remaining channels share one compact row. */
+.card-grid.mode-single {
+  --wrist-span: 1; --tac-span: 1;
+  gap: 6px;
+  grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr));
+}
+.mode-single .card-ego { grid-column: 1 / -1; }
+.mode-single .card-ego-eye { --span: var(--eye-span, 3); }
 
 .placeholder { grid-column: 1 / -1; border: 1px dashed #27313e; border-radius: 11px; padding: 70px 20px; text-align: center; color: #4f5e71; font-size: 13px; }
 .card {
@@ -261,6 +269,18 @@ svg { display: block; }
 
 .mode-compact .card-head { min-height: 32px; padding: 6px 9px; }
 .mode-compact .card-foot { min-height: 22px; padding: 5px 9px; }
+.mode-single .card-head { min-height: 28px; padding: 4px 7px; gap: 5px; }
+.mode-single .card-head .name { font-size: 10px; }
+.mode-single .badge-res, .mode-single .badge-camera { display: none; }
+.mode-single .head-actions .ego-toggle button { font-size: 9px; padding: 2px 6px; }
+.mode-single .expand { width: 18px; height: 18px; font-size: 11px; }
+.mode-single .card-foot { min-height: 20px; padding: 3px 7px; font-size: 9px; }
+.mode-single .card-foot .delta { display: none; }
+.single-screen .breadcrumb, .single-screen .title-row,
+.single-screen .force-row, .single-screen .tactile-note { display: none; }
+.single-screen .content { padding-top: 10px; padding-bottom: 8px; }
+.single-screen .layout-toolbar { margin: 0 0 8px; padding: 7px 12px; }
+.single-screen .views-row { margin: 0 0 8px; }
 
 .force-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
 .force-row label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #c6d2e0; }

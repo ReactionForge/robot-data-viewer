@@ -33,9 +33,8 @@
       recording: 'recording', recordings: 'recordings', channels: 'channels',
       needFolder: 'Choose a folder that contains observation.image.* subfolders.',
       folderLoaded: 'Folder loaded',
-      layoutLabel: 'Layout', layoutClear: 'Clear', layoutCompact: 'Compact', layoutAuto: 'Adaptive',
+      layoutLabel: 'Layout', layoutClear: 'Clear', layoutCompact: 'Compact', layoutSingle: 'One screen', layoutAuto: 'Adaptive',
       egoLabel: 'Overview', egoMerge: 'Merge', egoSplit: 'Split eyes',
-      fitOneScreen: 'Fit to screen',
       shortcutHint: 'Space play · ←/→ 5s · ,/. frame · F fullscreen · 1–7 focus',
       egoLeft: 'Overview · Left eye', egoRight: 'Overview · Right eye',
       leftEye: 'Left eye', rightEye: 'Right eye',
@@ -66,9 +65,8 @@
       recording: '条录制', recordings: '条录制', channels: '路',
       needFolder: '请选择包含 observation.image.* 子文件夹的目录。',
       folderLoaded: '文件夹已载入',
-      layoutLabel: '布局', layoutClear: '清晰', layoutCompact: '紧凑', layoutAuto: '自适应',
+      layoutLabel: '布局', layoutClear: '清晰', layoutCompact: '紧凑', layoutSingle: '单屏', layoutAuto: '自适应',
       egoLabel: '总览', egoMerge: '合并', egoSplit: '双眼',
-      fitOneScreen: '适应一屏',
       shortcutHint: '空格 播放 · ←/→ 5秒 · ,/. 单帧 · F 全屏 · 1–7 聚焦',
       egoLeft: '总览 · 左眼', egoRight: '总览 · 右眼',
       leftEye: '左眼', rightEye: '右眼',
@@ -114,7 +112,7 @@
     countInput: $('countInput'), channelChecks: $('channelChecks'),
     layoutSelect: $('layoutSelect'), selectAllBtn: $('selectAllBtn'), noneBtn: $('noneBtn'),
     applyCustomBtn: $('applyCustomBtn'),
-    layoutSwitch: $('layoutSwitch'), egoSwitch: $('egoSwitch'), fitBtn: $('fitBtn'),
+    layoutSwitch: $('layoutSwitch'), egoSwitch: $('egoSwitch'),
     content: $('content'), mainScroll: $('mainScroll'), cardGrid: $('cardGrid'),
     tactileChannels: $('tactileChannels'),
     playBtn: $('playBtn'), prevBtn: $('prevBtn'), nextBtn: $('nextBtn'),
@@ -138,12 +136,11 @@
     objectUrls: [],
     filter: 'all',
     customKeys: [],
-    layout: 'clear',       // clear | compact | auto
+    layout: 'clear',       // clear | compact | single | auto
     gridCols: '4',         // auto | 1 | 2 | 3 | 4 (custom panel)
     splitEgo: false,       // overview eye-split
     egoSplitAllowed: true, // false when source is not ~32:9
     egoReverting: false,
-    fitOneScreen: false,
     playing: false,
     duration: 0,
     currentTime: 0,
@@ -154,7 +151,6 @@
     renderId: 0,
     ticking: false,
     toastTimer: null,
-    fitTimer: null,
     // lightbox
     lbOpen: false, lbChannel: null, lbEye: null, lbVideo: null, lbMedia: null,
     lbNatW: 0, lbNatH: 0, lbZoom: 'fit', lbTx: 0, lbTy: 0, lbPan: null,
@@ -503,7 +499,6 @@
         }, 0);
       }
     }
-    scheduleFit();
   }
 
   function renderCards() {
@@ -518,8 +513,20 @@
     var list = buildRenderList();
 
     // layout mode + column count
+    var single = state.layout === 'single';
+    document.querySelector('.app').classList.toggle('single-screen', single);
     el.cardGrid.className = 'card-grid mode-' + state.layout +
       ' cols-' + (state.gridCols === 'auto' ? 'auto' : state.gridCols);
+    if (single) {
+      var egoCount = list.filter(function (it) { return isEgo(it.channel); }).length;
+      var otherCount = list.length - egoCount;
+      var cols = Math.max(otherCount, egoCount > 1 ? egoCount : 1, 1);
+      el.cardGrid.style.setProperty('--cols', cols);
+      el.cardGrid.style.setProperty('--eye-span', Math.max(1, Math.floor(cols / 2)));
+    } else {
+      el.cardGrid.style.removeProperty('--cols');
+      el.cardGrid.style.removeProperty('--eye-span');
+    }
     el.cardGrid.innerHTML = '';
     state.videos = [];
     state.master = null;
@@ -530,7 +537,6 @@
       ph.textContent = t('gridPlaceholder');
       el.cardGrid.appendChild(ph);
       updateTimeUI(savedTime);
-      applyFit();
       return;
     }
 
@@ -647,7 +653,6 @@
     renderPlayState();
     if (state.playing) ensureTick();
     updateTimeUI(savedTime);
-    applyFit();
   }
 
   // ---------------------------------------------------------------- playback
@@ -736,36 +741,6 @@
     } else if (document.exitFullscreen) {
       document.exitFullscreen();
     }
-  }
-
-  // ---------------------------------------------------------------- fit to screen
-  function applyFit() {
-    var grid = el.cardGrid;
-    if (!state.fitOneScreen || !grid || !el.content) {
-      if (grid) grid.style.zoom = '1';
-      return;
-    }
-    grid.style.zoom = '1';
-    var natural = grid.getBoundingClientRect().height;
-    if (!natural) { grid.style.zoom = '1'; return; }
-    var gridTop = grid.offsetTop; // .content is position:relative
-    var below = el.content.offsetHeight - (grid.offsetTop + grid.offsetHeight);
-    var avail = el.mainScroll.clientHeight - gridTop - below - 10;
-    var factor = avail / natural;
-    factor = Math.max(0.55, Math.min(1, factor));
-    grid.style.zoom = factor;
-  }
-  function scheduleFit() {
-    if (!state.fitOneScreen) return;
-    clearTimeout(state.fitTimer);
-    state.fitTimer = setTimeout(applyFit, 90);
-  }
-  function setFit(on) {
-    state.fitOneScreen = on;
-    el.fitBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    el.fitBtn.classList.toggle('active', on);
-    storeSet('rdv.fitOneScreen', on ? '1' : '0');
-    applyFit();
   }
 
   // ---------------------------------------------------------------- lightbox
@@ -907,7 +882,6 @@
   el.collapseBtn.addEventListener('click', function () {
     el.sidebar.classList.toggle('collapsed');
     el.collapseBtn.textContent = el.sidebar.classList.contains('collapsed') ? '⇥' : '⇤';
-    scheduleFit();
   });
 
   // layout switch
@@ -926,10 +900,7 @@
     if (!b || b.disabled) return;
     setEgoSplit(b.getAttribute('data-ego') === 'split', true);
   });
-  // fit to screen
-  el.fitBtn.addEventListener('click', function () { setFit(!state.fitOneScreen); });
   window.addEventListener('resize', function () {
-    scheduleFit();
     if (state.lbOpen) applyLbZoom();
   });
 
@@ -966,7 +937,6 @@
     state.gridCols = el.layoutSelect.value;
     el.cardGrid.className = 'card-grid mode-' + state.layout +
       ' cols-' + (state.gridCols === 'auto' ? 'auto' : state.gridCols);
-    scheduleFit();
   });
   el.applyCustomBtn.addEventListener('click', function () {
     var checks = el.channelChecks.querySelectorAll('input');
@@ -1073,7 +1043,6 @@
   });
 
   // init from storage
-  if (storeGet('rdv.fitOneScreen') === '1') setFit(true);
   applyLang();
   updateCounts();
   syncEgoUI();
