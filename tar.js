@@ -12,15 +12,9 @@
 
   var BLOCK = 512;
 
-  function toString(bytes) {
-    var end = bytes.length;
-    while (end > 0 && bytes[end - 1] === 0) end--;
-    var out = '';
-    var chunk = 0x8000;
-    for (var i = 0; i < end; i += chunk) {
-      out += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunk, end)));
-    }
-    return out;
+  function decodeName(bytes, decoder) {
+    var end = bytes.indexOf(0);
+    return decoder.decode(end === -1 ? bytes : bytes.subarray(0, end));
   }
 
   function numeric(bytes) {
@@ -46,15 +40,16 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  function paxRecords(text) {
-    var out = {};
+  function paxRecords(bytes, decoder) {
+    var out = Object.create(null);
     var i = 0;
-    while (i < text.length) {
-      var space = text.indexOf(' ', i);
+    while (i < bytes.length) {
+      var space = bytes.indexOf(32, i);
       if (space < 0) break;
-      var len = parseInt(text.slice(i, space), 10);
-      if (!Number.isFinite(len) || len <= 0 || i + len > text.length) break;
-      var record = text.slice(space + 1, i + len);
+      var lengthField = decoder.decode(bytes.subarray(i, space));
+      var len = Number(lengthField);
+      if (!/^\d+$/.test(lengthField) || !Number.isSafeInteger(len) || i + len <= space || i + len > bytes.length) break;
+      var record = decoder.decode(bytes.subarray(space + 1, i + len));
       i += len;
       var eq = record.indexOf('=');
       if (eq > 0) {
@@ -74,7 +69,6 @@
     var total = file.size;
     var decoder = new TextDecoder();
     var longName = null;
-    var globalPax = {};
     var filePax = null;
     var inspected = 0;
 
@@ -90,8 +84,8 @@
 
       var size = numeric(h.subarray(124, 136));
       var type = String.fromCharCode(h[156] || 48);
-      var prefix = toString(h.subarray(345, 500));
-      var name = toString(h.subarray(0, 100));
+      var prefix = decodeName(h.subarray(345, 500), decoder);
+      var name = decodeName(h.subarray(0, 100), decoder);
       if (prefix) name = prefix + '/' + name;
       var dataOffset = offset + BLOCK;
 
@@ -101,24 +95,20 @@
 
       if (type === 'L') {
         var lbuf = await file.slice(dataOffset, dataOffset + size).arrayBuffer();
-        longName = toString(new Uint8Array(lbuf)).replace(/\n$/, '').replace(/\0$/, '');
-      } else if (type === 'K') {
-        longName = null; // GNU long link name — not needed for our members.
+        longName = decodeName(new Uint8Array(lbuf), decoder).replace(/\n$/, '');
       } else if (type === 'x') {
         var xbuf = await file.slice(dataOffset, dataOffset + size).arrayBuffer();
-        filePax = paxRecords(decoder.decode(xbuf));
-      } else if (type === 'g') {
-        var gbuf = await file.slice(dataOffset, dataOffset + size).arrayBuffer();
-        globalPax = paxRecords(decoder.decode(gbuf));
-      } else if (type === '0' || type === '\0' || type === ' ' || type === '7') {
-        var finalName = (filePax && filePax.path) || longName || name;
-        finalName = finalName.replace(/^\.\//, '');
-        entries.push({
-          name: finalName,
-          size: size,
-          type: type,
-          blob: file.slice(dataOffset, dataOffset + size)
-        });
+        filePax = paxRecords(new Uint8Array(xbuf), decoder);
+      } else if (type !== 'g' && type !== 'K') {
+        if (type === '0' || type === '\0' || type === ' ' || type === '7') {
+          var finalName = (filePax && filePax.path) || longName || name;
+          entries.push({
+            name: finalName.replace(/^\.\//, ''),
+            size: size,
+            type: type,
+            blob: file.slice(dataOffset, dataOffset + size)
+          });
+        }
         longName = null;
         filePax = null;
       }

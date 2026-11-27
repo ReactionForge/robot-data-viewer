@@ -1,234 +1,408 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Robot Data Viewer — Offline TAR Player v2</title>
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Robot Data Viewer</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="workspace.css">
+  <link rel="stylesheet" href="vendor/uplot.css">
 </head>
 <body>
-<div class="app">
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#dceaff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M19.1 4.9l-2.8 2.8M7.7 16.3l-2.8 2.8"/>
-        </svg>
-      </div>
-      <div class="brand-text">
-        <div class="brand-name" data-i18n="brandName">Robot Data Viewer</div>
-        <div class="brand-sub" data-i18n="brandSub">DATA EXPLORER</div>
-      </div>
-      <span class="version">2.0.0</span>
-    </div>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-robot" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="4"/><path d="M12 4v3M9 12v2m6-2v2M2 12v3m20-3v3M10 17h4"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 8a3 3 0 0 1 3-3h4l2 2h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/></symbol>
+    <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-3v10l-6-3"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16M7 15l4-5 4 2 5-7"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-sync" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M4 10h16m-10 4h4M8 6V4h8v2"/></symbol>
+    <symbol id="i-keys" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.1m3.9 0h.1m3.9 0h.1m3 0h.1M8 14h8"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M19 5l-1.4 1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 15A8.5 8.5 0 0 1 9 4a8.5 8.5 0 1 0 11 11Z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m9 5 11 7-11 7z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12m6-12v12" stroke-width="3"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 3 7m-3-7V5m0 6h6"/></symbol>
+    <symbol id="i-forward" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-3 7m3-7V5m0 6h-6"/></symbol>
+  </svg>
 
-    <div class="segmented">
-      <button class="seg active" data-i18n="tabRecordings">Recordings</button>
-      <button class="seg" data-i18n="tabLive">Live Cameras</button>
-    </div>
-
-    <div class="top-actions">
-      <span class="offline"><span class="dot green"></span><span data-i18n="offline">Local files · Offline viewing</span></span>
-      <button id="langBtn" class="ghost" title="Switch language">中文</button>
-      <button id="openFolderBtn" class="btn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        <span data-i18n="openFolder">Open folder</span>
-      </button>
-      <button id="openTarBtn" class="btn primary">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
-        <span data-i18n="openTar">Open TAR</span>
-      </button>
-      <input type="file" id="tarInput" accept=".tar,application/x-tar" hidden>
+  <div class="app" id="app">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="collapseBtn" data-title="sidebarToggle" aria-controls="sidebar" aria-expanded="true"><svg class="icon"><use href="#i-panel"/></svg></button>
+      <div class="brand"><div class="logo"><svg class="icon"><use href="#i-robot"/></svg></div><span>Robot Data Viewer</span></div>
+      <div class="top-actions">
+        <span class="local-status"><span class="dot"></span><span data-i18n="offline">本地离线</span></span>
+        <button id="langBtn" class="icon-btn language" aria-label="Switch language">EN</button>
+        <button id="themeBtn" class="icon-btn" data-title="toggleTheme"><svg class="icon"><use href="#i-moon"/></svg></button>
+        <div class="top-divider"></div>
+        <button id="openFolderBtn" class="btn" data-title="openFolder"><svg class="icon"><use href="#i-folder"/></svg><span data-i18n="openFolder">打开文件夹</span></button>
+        <button id="openTarBtn" class="btn primary"><svg class="icon"><use href="#i-import"/></svg><span data-i18n="openTar">导入 TAR</span></button>
+      </div>
+      <input type="file" id="tarInput" accept=".tar,application/x-tar" multiple hidden>
       <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
+      <input type="file" id="batchFolderInput" webkitdirectory directory multiple hidden>
+    </header>
+
+    <div class="body">
+      <aside class="sidebar" id="sidebar">
+        <div class="side-heading"><h2 data-i18n="sessions">录制会话</h2><span id="recordingCount" class="count">0</span></div>
+        <div class="search-wrap">
+          <svg class="icon"><use href="#i-search"/></svg>
+          <input id="searchInput" type="search" data-placeholder="search" data-title="search" placeholder="查找会话">
+        </div>
+        <div id="qaFilters" class="qa-filters" role="group" data-title="qaFilter">
+          <button class="active" data-qa-filter="all" aria-pressed="true" data-i18n="qaAll"></button>
+          <button data-qa-filter="issues" aria-pressed="false" data-i18n="qaAbnormal"></button>
+          <button data-qa-filter="normal" aria-pressed="false" data-i18n="qaNormal"></button>
+          <button data-qa-filter="review" aria-pressed="false" data-i18n="qaReview"></button>
+        </div>
+        <button class="btn qa-batch-entry" id="qaBatchBtn" data-i18n="qaBatch"></button>
+        <div class="recording-list" id="recordings"></div>
+        <div class="side-foot">
+          <button id="helpBtn" class="sidebar-action"><svg class="icon"><use href="#i-keys"/></svg><span data-i18n="shortcuts">键盘快捷键</span><kbd>?</kbd></button>
+          <span class="privacy"><span class="dot"></span><span data-i18n="privacy">文件仅在当前浏览器读取</span></span>
+        </div>
+      </aside>
+
+      <main class="main" id="main">
+        <div class="main-scroll" id="mainScroll">
+          <section id="welcome" class="welcome content">
+            <h1 data-i18n="welcomeTitle">录制工作区</h1>
+            <p class="subtitle" data-i18n="welcomeDesc">在一条时间线上回看机器人相机，检查采集质量与传感器数据。</p>
+            <div class="import-card">
+              <div class="import-copy">
+                <div class="feature-icon import-icon"><svg class="icon"><use href="#i-archive"/></svg></div>
+                <h2 data-i18n="startTitle">打开一段录制</h2>
+                <p data-i18n="startDesc">将设备导出的 .tar 拖到这里，或打开已解压的会话文件夹。</p>
+                <div class="import-actions">
+                  <button id="welcomeTarBtn" class="btn primary"><svg class="icon"><use href="#i-import"/></svg><span data-i18n="chooseTar">选择 TAR 文件</span></button>
+                  <button id="welcomeFolderBtn" class="btn"><svg class="icon"><use href="#i-folder"/></svg><span data-i18n="openFolder">打开文件夹</span></button>
+                </div>
+              </div>
+              <div class="import-graphic" aria-hidden="true">
+                <div class="graphic-track"><svg class="icon"><use href="#i-video"/></svg><i></i><i></i><i></i><i></i></div>
+                <div class="graphic-track"><svg class="icon"><use href="#i-video"/></svg><i></i><i></i><i></i><i></i></div>
+                <div class="graphic-track"><svg class="icon"><use href="#i-sync"/></svg><i></i><i></i><i></i><i></i></div>
+                <div class="graphic-cursor"></div>
+              </div>
+            </div>
+            <div class="features">
+              <div class="feature"><div class="feature-icon"><svg class="icon"><use href="#i-video"/></svg></div><div><h2 data-i18n="featureVideo">多路同步回放</h2><p data-i18n="featureVideoDesc">保留原始画幅，支持双眼拆分和逐帧查看。</p></div></div>
+              <div class="feature"><div class="feature-icon"><svg class="icon"><use href="#i-sync"/></svg></div><div><h2 data-i18n="featureTiming">采集质量诊断</h2><p data-i18n="featureTimingDesc">检查起始偏移、采样频率和帧间隔异常。</p></div></div>
+              <div class="feature"><div class="feature-icon"><svg class="icon"><use href="#i-chart"/></svg></div><div><h2 data-i18n="featureSignals">传感器曲线</h2><p data-i18n="featureSignalsDesc">浏览数值 CSV，在曲线上定位回放时间。</p></div></div>
+            </div>
+          </section>
+
+          <div class="content session" id="session" hidden>
+            <div class="session-heading">
+              <div><div id="sessionSource" class="source-name"></div><h1 id="episodeTitle"></h1><div id="episodeId" class="episode-id"></div></div>
+              <button id="removeSessionBtn" class="btn quiet" data-i18n="closeSession">关闭会话</button>
+            </div>
+            <section class="qa-strip" data-title="qaTitle" aria-labelledby="qaTitle">
+              <div class="qa-toolbar">
+                <div><h2 id="qaTitle" data-i18n="qaTitle"></h2><small id="qaIndexStatus" data-i18n="qaIndexing" hidden></small></div>
+                <div class="qa-actions">
+                  <button id="qaThresholdBtn" class="btn" data-i18n="qaThresholds"></button>
+                  <div class="segmented" id="qaMarks" role="group" data-title="qaMark">
+                    <button data-qa-mark="accepted" data-i18n="qaAccepted"></button>
+                    <button data-qa-mark="review" data-i18n="qaReview"></button>
+                    <button data-qa-mark="discard" data-i18n="qaDiscard"></button>
+                  </div>
+                </div>
+              </div>
+              <div id="qaValues" class="qa-values"></div>
+            </section>
+            <nav class="view-tabs" aria-label="Views">
+              <button class="view-tab active" data-view="cameras" aria-controls="cameraView" aria-pressed="true"><svg class="icon"><use href="#i-video"/></svg><span data-i18n="cameraViews">相机回放</span></button>
+              <button class="view-tab" data-view="linked" aria-controls="mediaWorkspace" aria-pressed="false"><svg class="icon"><use href="#i-sync"/></svg><span data-i18n="qaLinked">联动分析</span></button>
+              <button class="view-tab" data-view="analysis" aria-controls="analysisView" aria-pressed="false"><svg class="icon"><use href="#i-chart"/></svg><span data-i18n="analysis">数据分析</span></button>
+              <button class="btn inspector-toggle" id="qaInspectorBtn" aria-controls="frameInspector" aria-expanded="false" data-title="qaFrameInspectorToggle" data-i18n="qaInspector"></button>
+            </nav>
+
+            <div id="mediaWorkspace" class="media-workspace">
+            <section id="cameraView" class="camera-pane">
+              <div class="camera-bar">
+                <div class="chips" id="cameraFilters">
+                  <button class="chip active" data-filter="all"><span data-i18n="allCameras">全部</span> <span id="chipAllCount">0</span></button>
+                  <button class="chip" data-filter="main"><span data-i18n="mainCameras">主相机</span> <span id="chipMainCount">0</span></button>
+                  <button class="chip" data-filter="tactile"><span data-i18n="tactileCameras">触觉</span> <span id="chipTactileCount">0</span></button>
+                  <button class="chip" id="customChip" aria-expanded="false" aria-controls="customPanel" data-i18n="custom">自定义</button>
+                </div>
+                <div class="camera-options">
+                  <label class="inline-field"><span data-i18n="alignment">对齐</span>
+                    <select id="syncMode">
+                      <option value="capture" data-i18n="byCapture">采集起点</option><option value="video" data-i18n="byVideo">视频起点</option>
+                    </select>
+                  </label>
+                  <label class="inline-field"><span data-i18n="layout">布局</span>
+                    <select id="layoutSelect">
+                      <option value="clear" data-i18n="layoutClear">清晰</option><option value="compact" data-i18n="layoutCompact">紧凑</option>
+                      <option value="single" data-i18n="layoutSingle">单屏</option><option value="auto" data-i18n="layoutAuto">自适应</option>
+                    </select>
+                  </label>
+                  <button class="btn" id="splitBtn" aria-pressed="false" data-i18n="split">拆分双眼</button>
+                  <button class="btn" id="qaOsdBtn" aria-pressed="false" data-i18n="qaOSD"></button>
+                  <button class="btn audio-toggle" id="primaryAudio" aria-pressed="false" data-title="qaSound">♪</button>
+                </div>
+              </div>
+              <div class="tactile-tools" id="tactileTools" hidden>
+                <span data-i18n="qaTactile"></span>
+                <div class="segmented">
+                  <button data-tactile="raw" class="active" aria-pressed="true" data-i18n="qaTactileRaw"></button>
+                  <button data-tactile="diff" aria-pressed="false" data-i18n="qaTactileDiff"></button>
+                  <button data-tactile="heat" aria-pressed="false" data-i18n="qaTactileHeat"></button>
+                </div>
+                <button id="tactileBaseBtn" class="btn" data-i18n="qaTactileBase" disabled></button>
+                <label><span data-i18n="qaTactileGain"></span> <input id="tactileGain" type="range" min="1" max="8" value="3" step="0.25" disabled><output id="tactileGainValue">3×</output></label>
+                <span id="tactileBaseStatus" class="qa-muted"></span>
+              </div>
+              <div id="customPanel" class="custom-panel" hidden>
+                <div class="custom-actions">
+                  <button class="btn" id="selectAllBtn" data-i18n="selectAll">全选</button>
+                  <button class="btn" id="noneBtn" data-i18n="none">清空</button>
+                  <label class="inline-field"><span data-i18n="gridColumns">列数</span>
+                    <select id="columnSelect">
+                      <option value="0" data-i18n="layoutAuto">自适应</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                    </select>
+                  </label>
+                  <button class="btn primary" id="applyCustomBtn" data-i18n="apply">应用</button>
+                </div>
+                <div class="channel-checks" id="channelChecks"></div>
+              </div>
+              <div id="cameraGrid" class="camera-grid"></div>
+            </section>
+            <div id="linkedHandle" class="linked-handle" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="cameraView linkedPane" aria-valuemin="25" aria-valuemax="75" aria-valuenow="49" data-title="qaSplitHandle" hidden></div>
+            <section id="linkedPane" class="linked-pane" hidden><div id="linkedPlotMount"></div><div id="linkedPoseMount"></div></section>
+            </div>
+
+            <section id="analysisView" hidden>
+              <div id="analysisPlotMount"></div>
+              <div id="analysisPoseMount"></div>
+              <div class="metric-grid">
+                <div class="metric"><span data-i18n="duration">会话时长</span><strong id="metricDuration">—</strong></div>
+                <div class="metric"><span data-i18n="timingCoverage">时间戳覆盖</span><strong id="metricCoverage">—</strong></div>
+                <div class="metric"><span data-i18n="startSpread">最大起始偏移</span><strong id="metricSpread">—</strong></div>
+                <div class="metric"><span data-i18n="gapCount">长间隔</span><strong id="metricGaps">—</strong></div>
+              </div>
+              <section class="panel chart-panel">
+                <div class="panel-heading">
+                  <div><h2 data-i18n="timelineAnalysis">时间序列</h2><p data-i18n="chartDescription">悬停查看样本，点击定位回放时间。</p></div>
+                  <div class="chart-controls">
+                    <div class="segmented" id="chartModes">
+                      <button class="active" data-chart="timing" aria-pressed="true" data-i18n="intervals">帧间隔</button>
+                      <button data-chart="signal" aria-pressed="false" data-i18n="signals">数据曲线</button>
+                    </div>
+                    <select id="trackSelect" data-title="selectTrack"></select>
+                  </div>
+                </div>
+                <p class="chart-meta" id="chartMeta"></p>
+                <div class="plot" id="plot">
+                  <canvas id="plotCanvas" tabindex="0" data-title="plotLabel" aria-describedby="chartMeta"></canvas>
+                  <div id="plotEmpty" class="plot-empty" hidden></div>
+                  <div id="plotTooltip" class="plot-tooltip" hidden></div>
+                </div>
+              </section>
+              <section class="panel quality-panel">
+                <div class="panel-heading">
+                  <div><h2 data-i18n="channelQuality">通道质量</h2><p data-i18n="gapDefinition">长间隔指超过参考帧间隔 1.5 倍的相邻记录。</p></div>
+                  <button id="exportBtn" class="btn"><svg class="icon"><use href="#i-import"/></svg><span data-i18n="exportCsv">导出 CSV</span></button>
+                </div>
+                <div id="analysisNote" class="analysis-note" hidden></div>
+                <div class="table-scroll" tabindex="0" data-title="channelQuality">
+                  <table>
+                    <thead><tr>
+                      <th scope="col" data-i18n="channel">通道</th><th scope="col" data-i18n="resolution">分辨率</th>
+                      <th scope="col" data-i18n="timestampSource">时间戳来源</th>
+                      <th scope="col" data-i18n="offset">起始偏移</th><th scope="col" data-i18n="sampleCount">有效行</th>
+                      <th scope="col" data-i18n="effectiveRate">实测频率</th><th scope="col" data-i18n="p95">P95 间隔</th>
+                      <th scope="col" data-i18n="maxInterval">最大间隔</th><th scope="col" data-i18n="gapCount">长间隔</th>
+                      <th scope="col" data-i18n="duplicates">重复</th><th scope="col" data-i18n="reversed">倒序</th><th scope="col" data-i18n="invalid">无效</th>
+                      <th scope="col" data-i18n="synthetic">合成帧</th><th scope="col" data-i18n="confirmedDrop">已标记丢帧</th>
+                    </tr></thead>
+                    <tbody id="qualityRows"></tbody>
+                  </table>
+                </div>
+              </section>
+              <details id="metadataPanel" class="panel metadata-panel">
+                <summary data-i18n="metadata">会话元数据</summary>
+                <pre id="metadataText"></pre>
+              </details>
+            </section>
+          </div>
+        </div>
+
+        <footer class="player" id="player" hidden>
+          <div class="qa-timeline" id="qaTimelineBand" hidden>
+            <canvas id="qaTimeline" data-title="qaTimeline"></canvas>
+            <i id="qaTimelineCursor"></i><div id="qaTimelineTip" class="qa-timeline-tip" hidden></div>
+          </div>
+          <div class="scrub">
+            <div id="loopRange" class="loop-range" hidden></div>
+            <input type="range" id="seek" min="0" max="1" value="0" step="0.001" data-title="seek">
+          </div>
+          <div class="player-controls">
+            <div class="transport">
+              <button id="prevBtn" class="icon-btn skip" data-title="backFive"><svg class="icon"><use href="#i-back"/></svg><span>5</span></button>
+              <button id="playBtn" class="play-btn" data-title="play"><svg class="icon"><use href="#i-play"/></svg></button>
+              <button id="nextBtn" class="icon-btn skip" data-title="forwardFive"><svg class="icon"><use href="#i-forward"/></svg><span>5</span></button>
+              <div class="time"><span id="curTime">00:00.0</span><span class="time-divider">/</span><span id="totTime">00:00.0</span></div>
+            </div>
+            <div class="frame-controls">
+              <button id="frameBackBtn" class="icon-btn" data-title="frameBack">◀|</button>
+              <span id="frameLabel" class="frame-label"></span>
+              <button id="frameFwdBtn" class="icon-btn" data-title="frameForward">|▶</button>
+            </div>
+            <div class="player-options">
+              <div class="qa-anomaly-controls" id="qaAnomalyControls" hidden>
+                <button id="qaPrevBtn" class="icon-btn" data-title="qaPrevAnomaly">[</button>
+                <button id="qaNextBtn" class="icon-btn" data-title="qaNextAnomaly">]</button>
+                <details id="qaAnomalyTypes"><summary data-i18n="qaAnomalyTypes"></summary>
+                  <div>
+                    <label><input type="checkbox" value="3" checked><span data-i18n="qaSyncCritical"></span></label>
+                    <label><input type="checkbox" value="4" checked><span data-i18n="qaSynthetic"></span></label>
+                    <label><input type="checkbox" value="8" checked><span data-i18n="qaSequence"></span></label>
+                    <label><input type="checkbox" value="16" checked><span data-i18n="qaCamera"></span></label>
+                    <label><input type="checkbox" value="96" checked><span data-i18n="qaSensorHealth"></span></label>
+                    <label><input type="checkbox" value="128"><span data-i18n="qaMissingPose"></span></label>
+                    <label><input type="checkbox" value="256" checked><span data-i18n="qaButtonEdge"></span></label>
+                  </div>
+                </details>
+              </div>
+              <div class="loop-controls">
+                <button id="loopA" class="icon-btn" data-title="setLoopA">A</button>
+                <button id="loopB" class="icon-btn" data-title="setLoopB">B</button>
+                <button id="loopToggle" class="icon-btn" data-title="qaLoopToggle" aria-pressed="false">↻</button>
+                <button id="loopClear" class="icon-btn" data-title="clearLoop" disabled><svg class="icon"><use href="#i-close"/></svg></button>
+              </div>
+              <select id="speed" data-title="speed">
+                <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option>
+                <option value="1.5">1.5×</option><option value="2">2×</option>
+              </select>
+              <button id="fullscreenBtn" class="icon-btn" data-title="fullscreen"><svg class="icon"><use href="#i-expand"/></svg></button>
+            </div>
+          </div>
+        </footer>
+      </main>
+      <aside class="frame-inspector" id="frameInspector" aria-labelledby="qaInspectorTitle" hidden>
+        <div class="inspector-heading"><h2 id="qaInspectorTitle" data-i18n="qaInspector"></h2><button id="qaInspectorClose" class="icon-btn" data-title="close"><svg class="icon"><use href="#i-close"/></svg></button></div>
+        <p id="inspectEmpty" class="qa-muted" data-i18n="qaInspectEmpty"></p>
+        <div class="inspector-body" id="inspectBody" hidden>
+          <div class="inspector-frame"><strong id="inspectIndex"></strong><span id="inspectReasons"></span></div>
+          <div class="inspector-actions"><button class="btn" id="qaCopyBtn" data-i18n="qaCopyFrame"></button><button class="btn" id="qaMosaicBtn" data-i18n="qaSaveMosaic"></button></div>
+          <section><h3 data-i18n="qaSyncDetails"></h3><dl id="inspectSync"></dl></section>
+          <section><h3 data-i18n="qaCameraDetails"></h3>
+            <div class="table-scroll" tabindex="0" data-title="qaCameraDetails">
+              <table><thead><tr><th scope="col">Camera</th><th scope="col">Sequence</th><th scope="col">Δseq</th><th scope="col">Δt (ms)</th><th scope="col">Synthetic</th><th scope="col">Reason</th><th scope="col">Dup seq</th><th scope="col">Video idx</th><th scope="col">Dup ns</th></tr></thead><tbody id="inspectCameraRows"></tbody></table>
+            </div>
+          </section>
+          <section><h3 data-i18n="qaSensorDetails"></h3><dl id="inspectSensors"></dl></section>
+          <section><h3 data-i18n="qaPose"></h3><dl id="inspectPoses"></dl></section>
+          <details id="inspectRawDetails"><summary>Raw JSON</summary><pre id="inspectRaw"></pre></details>
+        </div>
+      </aside>
     </div>
-  </header>
-
-  <div class="body">
-    <aside class="sidebar" id="sidebar">
-      <div class="side-head">
-        <span data-i18n="samples">SAMPLES</span>
-        <button id="collapseBtn" class="icon-btn" title="Collapse">⇤</button>
-      </div>
-      <div class="search-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-        <input id="searchInput" type="search" data-i18n-ph="searchRecording" placeholder="Find a recording...">
-      </div>
-      <div class="side-count" id="recordingCount">0 recordings</div>
-      <div class="recording-list" id="recordings">
-        <div class="empty-hint" data-i18n="emptyHint">Drop a session .tar anywhere on this page to begin</div>
-      </div>
-      <div class="side-foot">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-        <span data-i18n="privacy">Your recordings stay on this computer.</span>
-      </div>
-    </aside>
-
-    <main class="main">
-      <div class="main-scroll" id="mainScroll">
-        <div class="content" id="content">
-          <div class="breadcrumb" id="breadcrumb">— / —</div>
-          <div class="title-row">
-            <h1 id="episodeTitle">No recording loaded</h1>
-            <div class="align-info"><span class="dot amber"></span><span data-i18n="estimatedAlignment">Estimated alignment</span><button class="icon-btn" title="Info">ⓘ</button></div>
-          </div>
-
-          <!-- v2 layout toolbar -->
-          <div class="layout-toolbar">
-            <div class="tool-group">
-              <span class="tool-label" data-i18n="layoutLabel">Layout</span>
-              <div class="segmented small" id="layoutSwitch">
-                <button class="seg active" data-layout="clear" data-i18n="layoutClear">Clear</button>
-                <button class="seg" data-layout="compact" data-i18n="layoutCompact">Compact</button>
-                <button class="seg" data-layout="single" data-i18n="layoutSingle">One screen</button>
-                <button class="seg" data-layout="auto" data-i18n="layoutAuto">Adaptive</button>
-              </div>
-            </div>
-            <div class="tool-group">
-              <span class="tool-label" data-i18n="egoLabel">Overview</span>
-              <div class="segmented small" id="egoSwitch">
-                <button class="seg active" data-ego="merge" data-i18n="egoMerge">Merge</button>
-                <button class="seg" data-ego="split" data-i18n="egoSplit">Split eyes</button>
-              </div>
-            </div>
-            <span class="tool-hint" data-i18n="shortcutHint">Space play · ←/→ 5s · ,/. frame · F fullscreen · 1–7 focus</span>
-          </div>
-
-          <div class="views-row">
-            <div class="views-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 5v14"/></svg>
-              <span data-i18n="cameraViews">Camera views</span>
-              <span id="channelCountLabel" class="muted">0 channels</span>
-            </div>
-            <div class="chips">
-              <button class="chip active" data-filter="all"><span data-i18n="allCameras">All cameras</span> <span id="chipAllCount">(0)</span></button>
-              <button class="chip" data-filter="main"><span data-i18n="mainCameras">Main cameras</span> <span id="chipMainCount">(3)</span></button>
-              <button class="chip" data-filter="tactile"><span data-i18n="tactileCameras">Tactile cameras</span> <span id="chipTactileCount">(4)</span></button>
-              <button class="chip" id="customChip">⚙ <span data-i18n="custom">Custom</span></button>
-            </div>
-          </div>
-
-          <div id="customPanel" class="custom-panel hidden">
-            <div class="cp-block">
-              <span class="cp-label" data-i18n="visibleChannels">Visible channels</span>
-              <div class="cp-row">
-                <input type="number" id="countInput" min="1" value="7">
-                <span class="muted" data-i18n="channelsWord">channels</span>
-                <button class="mini-btn" id="selectAllBtn" data-i18n="selectAll">Select all</button>
-                <button class="mini-btn" id="noneBtn" data-i18n="none">None</button>
-              </div>
-              <div class="cp-channels" id="channelChecks"></div>
-            </div>
-            <div class="cp-block">
-              <span class="cp-label" data-i18n="layout">Grid columns</span>
-              <div class="cp-row">
-                <select id="layoutSelect">
-                  <option value="auto">Auto</option>
-                  <option value="1">1 col</option>
-                  <option value="2">2 cols</option>
-                  <option value="3">3 cols</option>
-                  <option value="4" selected>4 cols</option>
-                </select>
-              </div>
-            </div>
-            <div class="cp-block" style="justify-content:flex-end;">
-              <span class="cp-label">&nbsp;</span>
-              <div class="cp-row">
-                <button class="mini-btn accent" id="applyCustomBtn" data-i18n="apply">Apply</button>
-              </div>
-            </div>
-          </div>
-
-          <div id="cardGrid" class="card-grid mode-clear cols-4">
-            <div class="placeholder" data-i18n="gridPlaceholder">Import a session TAR to see all camera views playing in sync</div>
-          </div>
-
-          <div class="force-row">
-            <label><input type="checkbox" id="forceCheck"><span data-i18n="showForce">Show estimated force</span></label>
-            <div class="force-actions">
-              <button class="btn" data-i18n="importForce">Import force tracks</button>
-              <span class="muted" id="forceSize">0.0 KiB / 256 MiB</span>
-              <button class="btn" data-i18n="removeForce">Remove saved results for this episode</button>
-              <button class="btn" data-i18n="clearForce">Clear all saved force results</button>
-            </div>
-          </div>
-          <div class="tactile-note">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M6 8l-3 4 3 4M18 8l3 4-3 4"/></svg>
-            <span data-i18n="tactileResponse">Tactile response</span><span class="muted" id="tactileChannels">4 channels</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="player">
-        <div class="player-left">
-          <button id="prevBtn" class="icon-btn big" title="Back 5s">⏮</button>
-          <button id="playBtn" class="play-btn" title="Play / Pause">▶</button>
-          <button id="nextBtn" class="icon-btn big" title="Forward 5s">⏭</button>
-          <div class="time"><span id="curTime">00:00.0</span><span class="sep"> / </span><span id="totTime">00:00.0</span></div>
-        </div>
-        <div class="frame-ctl">
-          <button id="frameBackBtn" class="icon-btn" title="Previous frame (,)">◀|</button>
-          <span id="frameLabel" class="frame-label">frame 0 / 0</span>
-          <button id="frameFwdBtn" class="icon-btn" title="Next frame (.)">|▶</button>
-        </div>
-        <div class="scrub"><input type="range" id="seek" min="0" max="1000" value="0"></div>
-        <div class="player-right">
-          <span id="playState" class="playing paused"><span class="dot"></span><span id="playStateText" data-i18n="paused">Paused</span></span>
-          <select id="speed" title="Playback speed">
-            <option value="0.25">0.25x</option><option value="0.5">0.5x</option>
-            <option value="1" selected>1x</option><option value="1.5">1.5x</option>
-            <option value="2">2x</option>
-          </select>
-          <button id="fullscreenBtn" class="icon-btn" title="Fullscreen">⛶</button>
-        </div>
-      </div>
-    </main>
   </div>
-</div>
 
-<!-- v2 focus / lightbox -->
-<div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true">
-  <div class="lb-backdrop" id="lbBackdrop"></div>
-  <div class="lb-panel">
-    <div class="lb-head">
-      <span class="lb-name" id="lbName">—</span>
-      <span class="lb-res" id="lbRes"></span>
-      <button class="lb-close" id="lbClose" title="Close (Esc)">✕</button>
-    </div>
-    <div class="lb-stage" id="lbStage"></div>
-    <div class="lb-foot">
-      <button class="lb-play" id="lbPlay" title="Play / Pause (Space)">▶</button>
-      <span class="lb-time" id="lbTime">00:00.0 / 00:00.0</span>
-      <div class="lb-zoom" id="lbZoom">
-        <button class="lbz active" data-zoom="fit" data-i18n="zoomFit">Fit</button>
-        <button class="lbz" data-zoom="1">100%</button>
-        <button class="lbz" data-zoom="2">200%</button>
-        <button class="lbz" data-zoom="4">400%</button>
+  <dialog id="focusDialog" class="focus-dialog" aria-labelledby="focusName">
+    <div class="focus-head"><strong id="focusName"></strong><span id="focusRes"></span><button id="focusClose" class="icon-btn" data-title="close"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div id="focusStage" class="focus-stage"></div>
+    <div class="focus-foot">
+      <button id="focusPlay" class="play-btn" data-title="play"><svg class="icon"><use href="#i-play"/></svg></button>
+      <span id="focusTime"></span>
+      <div class="segmented" id="focusZoom">
+        <button class="active" data-zoom="fit" data-i18n="fit">适应</button><button data-zoom="1">100%</button><button data-zoom="2">200%</button><button data-zoom="4">400%</button>
       </div>
-      <span class="lb-hint" data-i18n="lbHint">Drag to pan · Esc to close</span>
+      <span class="focus-hint" data-i18n="panHint">放大后拖动平移</span>
+    </div>
+  </dialog>
+
+  <dialog id="helpDialog" class="help-dialog" aria-labelledby="helpTitle">
+    <div class="focus-head"><h2 id="helpTitle" data-i18n="shortcuts">键盘快捷键</h2><button id="helpClose" class="icon-btn" data-title="close"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <dl>
+      <div><dt data-i18n="togglePlayback">播放或暂停</dt><dd><kbd>Space</kbd></dd></div>
+      <div><dt data-i18n="qaFrameHelp"></dt><dd><kbd>←</kbd> <kbd>→</kbd> / <kbd>Shift</kbd></dd></div>
+      <div><dt data-i18n="stepFrame">上一帧或下一帧</dt><dd><kbd>,</kbd> <kbd>.</kbd></dd></div>
+      <div><dt data-i18n="qaJumpHelp"></dt><dd><kbd>[</kbd> <kbd>]</kbd></dd></div>
+      <div><dt data-i18n="qaLoopHelp"></dt><dd><kbd>I</kbd> <kbd>O</kbd> <kbd>L</kbd></dd></div>
+      <div><dt data-i18n="qaInspector"></dt><dd><kbd>D</kbd></dd></div>
+      <div><dt data-i18n="qaMarkHelp"></dt><dd><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dd></div>
+      <div><dt data-i18n="fullscreen">全屏</dt><dd><kbd>F</kbd></dd></div>
+      <div><dt data-i18n="close">关闭弹窗</dt><dd><kbd>Esc</kbd></dd></div>
+    </dl>
+  </dialog>
+
+  <dialog id="qaThresholdDialog" class="qa-dialog" aria-labelledby="qaThresholdTitle">
+    <div class="focus-head"><h2 id="qaThresholdTitle" data-i18n="qaThresholds"></h2><button type="button" id="qaThresholdClose" class="icon-btn" data-title="close"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <form id="qaThresholdForm">
+      <label><span data-i18n="qaWarnMs"></span><input name="warnMs" type="number" min="0.001" step="any" required></label>
+      <label><span data-i18n="qaFailMs"></span><input name="failMs" type="number" min="0.001" step="any" required></label>
+      <label><span data-i18n="qaGripMs"></span><input name="gripperMs" type="number" min="0.001" step="any" required></label>
+      <label><span data-i18n="qaImuMs"></span><input name="imuMs" type="number" min="0.001" step="any" required></label>
+      <label><span data-i18n="qaSyntheticPct"></span><input name="syntheticPct" type="number" min="0" max="100" step="any" required></label>
+      <p class="qa-muted" data-i18n="qaThresholdHint"></p>
+      <div class="qa-form-actions"><button type="button" class="btn" id="qaResetBtn" data-i18n="qaReset"></button><button type="submit" class="btn primary" data-i18n="apply"></button></div>
+    </form>
+  </dialog>
+
+  <dialog id="qaBatchDialog" class="qa-batch-dialog" aria-labelledby="qaBatchTitle">
+    <div class="focus-head">
+      <h2 id="qaBatchTitle" data-i18n="qaBatch"></h2>
+      <button type="button" id="qaBatchClose" class="icon-btn" data-title="close"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="qa-batch-summary" id="qaBatchSummary"></div>
+    <div class="qa-batch-controls">
+      <button class="btn primary" id="qaBatchFolderBtn" data-i18n="qaBatchFolder"></button>
+      <button class="btn" id="qaBatchCancelBtn" data-i18n="qaBatchCancel" hidden></button>
+      <select id="qaBatchGrade" data-title="qaBatchGrade">
+        <option value="" data-i18n="qaBatchAllGrades"></option>
+        <option value="PASS">PASS</option><option value="WARN">WARN</option><option value="FAIL">FAIL</option>
+        <option value="ERROR" data-i18n="qaManifestError"></option>
+      </select>
+      <select id="qaBatchMark" data-title="qaMark">
+        <option value="" data-i18n="qaBatchAllLabels"></option><option value="unmarked" data-i18n="qaUnmarked"></option>
+        <option value="accepted" data-i18n="qaAccepted"></option><option value="review" data-i18n="qaReview"></option>
+        <option value="discard" data-i18n="qaDiscard"></option>
+      </select>
+      <button class="btn" id="qaBatchCsv" data-i18n="exportCsv" disabled></button>
+      <button class="btn" id="qaBatchJson" data-i18n="qaBatchExportList" disabled></button>
+    </div>
+    <div id="qaBatchProgress" class="qa-batch-progress" role="status" hidden></div>
+    <div class="table-scroll qa-batch-table" tabindex="0" data-title="qaBatch">
+      <table>
+        <thead><tr id="qaBatchHeaders"></tr></thead>
+        <tbody id="qaBatchRows"></tbody>
+      </table>
+    </div>
+    <p id="qaBatchEmpty" class="qa-batch-empty" data-i18n="qaBatchEmpty"></p>
+  </dialog>
+
+  <div id="dropOverlay" class="overlay drop-overlay" hidden><div><svg class="icon"><use href="#i-import"/></svg><strong data-i18n="dropTitle">释放以导入录制 TAR</strong></div></div>
+  <div id="loading" class="overlay" hidden>
+    <div class="loading-box" role="status">
+      <strong data-i18n="loadingTitle">正在读取录制…</strong><div id="loadingFile"></div>
+      <progress id="progress" max="1"></progress>
     </div>
   </div>
-</div>
-
-<div id="dropOverlay" class="drop-overlay hidden">
-  <div class="drop-box">
-    <div data-i18n="dropTitle">Drop session .tar to import</div>
-    <div class="sub" data-i18n="dropSub">Seven or custom number of camera channels will play in sync</div>
-  </div>
-</div>
-
-<div id="loading" class="loading hidden">
-  <div class="loading-box">
-    <div class="spinner"></div>
-    <div class="title" id="loadingTitle" data-i18n="loadingTitle">Reading session archive…</div>
-    <div class="sub" id="loadingSub">0%</div>
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-  </div>
-</div>
-
-<div id="toast" class="toast hidden"></div>
-
-<script src="tar.js"></script>
-<script src="app.js"></script>
+  <div id="toast" class="toast" role="status" aria-atomic="true" hidden></div>
+  <script src="tar.js"></script>
+  <script src="analysis.js"></script>
+  <script src="strings.js"></script>
+  <script src="manifest-worker.js"></script>
+  <script src="manifest.js"></script>
+  <script src="workspace.js"></script>
+  <script src="workspace-micro.js"></script>
+  <script src="vendor/uplot.js"></script>
+  <script src="workspace-plots.js"></script>
+  <script src="workspace-tactile.js"></script>
+  <script src="workspace-spatial.js"></script>
+  <script src="workspace-batch.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
